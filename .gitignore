@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+*/node_modules/
+/newsocket/node_modules/
+newchat/node_modules/
+# Environment files
+.env
+.env.local
+.env.*
+
+# History
+.history/
+
+# Build outputs
+dist/
+build/
+.next/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db

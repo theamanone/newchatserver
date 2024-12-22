@@ -1,0 +1,69 @@
+{
+  "type": "login",
+  "data": {
+    "userId": "user123",
+    "groupIds": ["group1", "group2"],
+    "avatar": "path/to/avatar.png",
+    "name": "John Doe"
+  }
+}
+// Send Message
+
+
+{
+  "type": "message",
+  "data": {
+    "receiverId": "user456",
+    "groupId": "group1",
+    "content": "Hello, World!"
+  }
+}
+// Typing Status
+
+
+{
+  "type": "typingStatus",
+  "data": {
+    "userId": "user123",
+    "isTyping": true,
+    "groupId": "group1"
+  }
+}
+// Presence Update
+
+
+{
+  "type": "presenceUpdate",
+  "data": {
+    "userId": "user123",
+    "isOnline": true
+  }
+}
+// User Join Group
+
+
+{
+  "type": "userJoin",
+  "data": {
+    "userId": "user123",
+    "groupId": "group1"
+  }
+}
+// Join Group
+
+
+{
+  "type": "joinGroup",
+  "data": {
+    "groupId": "group1"
+  }
+}
+// Get Group Online Users
+
+
+{
+  "type": "getGroupOnlineUsers",
+  "data": {
+    "groupId": "group1"
+  }
+}
