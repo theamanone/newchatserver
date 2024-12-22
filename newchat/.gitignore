@@ -1,0 +1,56 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Node.js dependencies
+/node_modules/
+/.pnp
+.pnp.js
+.yarn/
+.yarn/install-state.gz
+
+# Test coverage output
+/coverage/
+
+# Next.js build artifacts
+/.next/
+/out/
+
+# File uploads (optional: adjust path if needed)
+uploads/
+
+# Production build output
+/build/
+
+# Miscellaneous system and IDE files
+.DS_Store
+Thumbs.db
+*.pem
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local environment variable files
+.env
+.env.*.local
+.env.local
+..env.example
+
+.history
+
+# Vercel and Netlify deployment files
+.vercel/
+.netlify/
+
+# TypeScript cache and environment files
+*.tsbuildinfo
+next-env.d.ts
+
+# Optional: Lock files (if you prefer not to track them)
+/package-lock.json
+/yarn.lock
+
+# Ignore log files and temporary files from running applications
+*.log
+*.tmp
+*.temp

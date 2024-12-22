@@ -1,20 +1,14 @@
 # Dependencies
 node_modules/
 */node_modules/
-/newsocket/node_modules/
-newchat/node_modules/
-# Environment files
-.env
-.env.local
-.env.*
-
-# History
-.history/
 
 # Build outputs
 dist/
 build/
 .next/
+
+# History
+.history/
 
 # IDE
 .vscode/
