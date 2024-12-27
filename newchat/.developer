@@ -1,0 +1,526 @@
+tree /F /A | findstr /V ".next" | findstr /V "node_modules"
+for get directory structure without node_modules and .next dir 
+
+// generate random env key using terminal  
+// node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+// **********************  single conversation *********************** //
+{
+    "conversation_id": "67056109e79e6b11ca0a2225",
+    "user1_id": "6705161ed033b3bc03566aee",
+    "user2_id": "670560d3e79e6b11ca0a221e",
+    "otherUser": {
+        "user_id": "670560d3e79e6b11ca0a221e",
+        "username": "ash",
+        "avatar": ""
+    },
+    "lastMessage": {
+        "content": "File sent",
+        "messageType": "video",
+        "timestamp": "2024-10-19T05:30:16.177Z",
+        "senderId": {
+            "_id": "6705161ed033b3bc03566aee",
+            "username": "iaman",
+            "email": "amankirmara143@gmail.com",
+            "password": "$2b$10$MnvwUdmbwq6ABZx82a4Hr.6LCXuAoUZpSbFHkqla1YuG/jsuWNSsC",
+            "avatar": "https://res.cloudinary.com/dvzqldbjr/image/upload/v1728318140/1728318134328-_smus_3xZsaOCsdgkVE-9-transformed.png.png",
+            "isActive": true,
+            "isSuspended": false,
+            "blockedUsers": [],
+            "chatGroups": [],
+            "lastSeen": "2024-10-08T11:23:10.141Z",
+            "createdAt": "2024-10-08T11:23:10.146Z",
+            "updatedAt": "2024-10-08T11:34:11.879Z",
+            "__v": 0
+        }
+    }
+}
+// **********************   conversations  *********************** //
+
+{
+    "conversations": [
+        {
+            "conversation_id": "67055d7ce79e6b11ca0a2216",
+            "user1_id": "6705161ed033b3bc03566aee",
+            "user2_id": "67051bcb5b58577428186568",
+            "otherUser": {
+                "user_id": "67051bcb5b58577428186568",
+                "username": "aman",
+                "avatar": ""
+            },
+            "lastMessage": null
+        },
+        {
+            "conversation_id": "67056109e79e6b11ca0a2225",
+            "user1_id": "6705161ed033b3bc03566aee",
+            "user2_id": "670560d3e79e6b11ca0a221e",
+            "otherUser": {
+                "user_id": "670560d3e79e6b11ca0a221e",
+                "username": "ash",
+                "avatar": ""
+            },
+            "lastMessage": {
+                "content": "File sent",
+                "messageType": "video",
+                "timestamp": "2024-10-19T05:30:16.177Z",
+                "senderId": {
+                    "_id": "6705161ed033b3bc03566aee",
+                    "username": "iaman",
+                    "email": "amankirmara143@gmail.com",
+                    "password": "$2b$10$MnvwUdmbwq6ABZx82a4Hr.6LCXuAoUZpSbFHkqla1YuG/jsuWNSsC",
+                    "avatar": "https://res.cloudinary.com/dvzqldbjr/image/upload/v1728318140/1728318134328-_smus_3xZsaOCsdgkVE-9-transformed.png.png",
+                    "isActive": true,
+                    "isSuspended": false,
+                    "blockedUsers": [],
+                    "chatGroups": [],
+                    "lastSeen": "2024-10-08T11:23:10.141Z",
+                    "createdAt": "2024-10-08T11:23:10.146Z",
+                    "updatedAt": "2024-10-08T11:34:11.879Z",
+                    "__v": 0
+                }
+            }
+        }
+    ]
+}
+
+
+// **********************   ME (fetch loggedin user)  *********************** //
+
+{
+    "user": {
+        "_id": "6705161ed033b3bc03566aee",
+        "username": "iaman",
+        "email": "amankirmara143@gmail.com",
+        "avatar": "https://res.cloudinary.com/dvzqldbjr/image/upload/v1728318140/1728318134328-_smus_3xZsaOCsdgkVE-9-transformed.png.png",
+        "lastSeen": "2024-10-08T11:23:10.141Z",
+        "isActive": true,
+        "isSuspended": false
+    }
+}
+
+// **********************   get message   *********************** //
+http://localhost:3000/api/v1/conversation/chat/message?page=1&limit=20
+receiver_id in header and user id in jwt 
+{
+    "messages": [
+        {
+            "_id": "6710c9ba67b964b60334ccf2",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "case \"image\":\r\n  return (\r\n    <div className=\"flex justify-center items-center mx-auto w-full\">\r\n      <Image\r\n        src={message?.mediaUrl || \"\"}\r\n        alt=\"uploaded\"\r\n        width={1920} // Set a high width to maintain quality\r\n        height={1080} // Set a high height to maintain quality\r\n        loading=\"lazy\"\r\n        className=\"rounded-md cursor-pointer max-w-full max-h-[60vh] object-contain\" // Prevent cropping and keep aspect ratio\r\n        onError={(e) => {\r\n          e.currentTarget.src = DEFAULT_FALLBACK_MESSAGE_IMAGE;\r\n          e.currentTarget.alt = \"Image failed to load\";\r\n        }}\r\n      />\r\n    </div>\r\n  );",
+            "messageType": "text",
+            "mediaUrl": null,
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-17T08:24:26.754Z",
+            "createdAt": "2024-10-17T08:24:26.756Z",
+            "updatedAt": "2024-10-17T08:24:26.756Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "6710c9e667b964b60334cd04",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/2160cb74-8783-4cdc-bf85-d00e90cfd6c9.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-17T08:25:10.558Z",
+            "createdAt": "2024-10-17T08:25:10.559Z",
+            "updatedAt": "2024-10-17T08:25:10.559Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "6710c9f567b964b60334cd08",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/53c8dfa7-7578-4149-b267-8a6b9916594a.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-17T08:25:25.409Z",
+            "createdAt": "2024-10-17T08:25:25.412Z",
+            "updatedAt": "2024-10-17T08:25:25.412Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "6710c9f567b964b60334cd0a",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/a5cad8bb-a2e0-49bb-a1e2-e2b75da08f9b.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-17T08:25:25.415Z",
+            "createdAt": "2024-10-17T08:25:25.416Z",
+            "updatedAt": "2024-10-17T08:25:25.416Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "6712061ed54a8ad681f89594",
+            "sender": "670560d3e79e6b11ca0a221e",
+            "receiver": "6705161ed033b3bc03566aee",
+            "content": "hello",
+            "messageType": "text",
+            "mediaUrl": null,
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T06:54:22.150Z",
+            "createdAt": "2024-10-18T06:54:22.154Z",
+            "updatedAt": "2024-10-18T06:54:22.154Z",
+            "__v": 0,
+            "isYour": false
+        },
+        {
+            "_id": "67121cf9d54a8ad681f897d1",
+            "sender": "670560d3e79e6b11ca0a221e",
+            "receiver": "6705161ed033b3bc03566aee",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/ad928cee-bacd-4034-a638-a62b575e7a4d.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T08:31:53.378Z",
+            "createdAt": "2024-10-18T08:31:53.379Z",
+            "updatedAt": "2024-10-18T08:31:53.379Z",
+            "__v": 0,
+            "isYour": false
+        },
+        {
+            "_id": "67121d7ad54a8ad681f897d5",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/5ae99bd0-36b7-4db8-8155-166ecb79524e.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T08:34:02.037Z",
+            "createdAt": "2024-10-18T08:34:02.039Z",
+            "updatedAt": "2024-10-18T08:34:02.039Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "67121d7ad54a8ad681f897d7",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/a3785351-d1ec-4aef-9f8e-21cf8a07d811.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T08:34:02.043Z",
+            "createdAt": "2024-10-18T08:34:02.044Z",
+            "updatedAt": "2024-10-18T08:34:02.044Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "67121d7ad54a8ad681f897d9",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/99533679-ffb0-4853-bf8c-3c63e165df3f.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T08:34:02.048Z",
+            "createdAt": "2024-10-18T08:34:02.049Z",
+            "updatedAt": "2024-10-18T08:34:02.049Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "67121d7ad54a8ad681f897db",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/b952b0d7-2769-4cf4-abb6-0c5470367269.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T08:34:02.053Z",
+            "createdAt": "2024-10-18T08:34:02.055Z",
+            "updatedAt": "2024-10-18T08:34:02.055Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "67124826b39142e2a5b22282",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "🤩🤩😘😂😀",
+            "messageType": "text",
+            "mediaUrl": null,
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T11:36:06.811Z",
+            "createdAt": "2024-10-18T11:36:06.815Z",
+            "updatedAt": "2024-10-18T11:36:06.815Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "6712482eb39142e2a5b22286",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "hello",
+            "messageType": "text",
+            "mediaUrl": null,
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T11:36:14.425Z",
+            "createdAt": "2024-10-18T11:36:14.426Z",
+            "updatedAt": "2024-10-18T11:36:14.426Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "67124a2eb39142e2a5b222a6",
+            "sender": "670560d3e79e6b11ca0a221e",
+            "receiver": "6705161ed033b3bc03566aee",
+            "content": "hello",
+            "messageType": "text",
+            "mediaUrl": null,
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T11:44:46.278Z",
+            "createdAt": "2024-10-18T11:44:46.281Z",
+            "updatedAt": "2024-10-18T11:44:46.281Z",
+            "__v": 0,
+            "isYour": false
+        },
+        {
+            "_id": "67124a46b39142e2a5b222aa",
+            "sender": "670560d3e79e6b11ca0a221e",
+            "receiver": "6705161ed033b3bc03566aee",
+            "content": "hi",
+            "messageType": "text",
+            "mediaUrl": null,
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T11:45:10.250Z",
+            "createdAt": "2024-10-18T11:45:10.252Z",
+            "updatedAt": "2024-10-18T11:45:10.252Z",
+            "__v": 0,
+            "isYour": false
+        },
+        {
+            "_id": "67124ba0b39142e2a5b222ca",
+            "sender": "670560d3e79e6b11ca0a221e",
+            "receiver": "6705161ed033b3bc03566aee",
+            "content": "hello",
+            "messageType": "text",
+            "mediaUrl": null,
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T11:50:56.511Z",
+            "createdAt": "2024-10-18T11:50:56.513Z",
+            "updatedAt": "2024-10-18T11:50:56.513Z",
+            "__v": 0,
+            "isYour": false
+        },
+        {
+            "_id": "67124bccb39142e2a5b222ce",
+            "sender": "670560d3e79e6b11ca0a221e",
+            "receiver": "6705161ed033b3bc03566aee",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/19fd6f4e-5929-4f0f-9070-c6b038a30433.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T11:51:40.621Z",
+            "createdAt": "2024-10-18T11:51:40.625Z",
+            "updatedAt": "2024-10-18T11:51:40.625Z",
+            "__v": 0,
+            "isYour": false
+        },
+        {
+            "_id": "67124c58b39142e2a5b222ff",
+            "sender": "670560d3e79e6b11ca0a221e",
+            "receiver": "6705161ed033b3bc03566aee",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/893b9a31-0721-426e-824e-012b73dfd348.png",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T11:54:00.036Z",
+            "createdAt": "2024-10-18T11:54:00.039Z",
+            "updatedAt": "2024-10-18T11:54:00.039Z",
+            "__v": 0,
+            "isYour": false
+        },
+        {
+            "_id": "67124d7cb39142e2a5b2233b",
+            "sender": "670560d3e79e6b11ca0a221e",
+            "receiver": "6705161ed033b3bc03566aee",
+            "content": "File sent",
+            "messageType": "image",
+            "mediaUrl": "/uploads/9d314760-1118-4bcf-bd13-262cd73000fe.jpg",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T11:58:52.886Z",
+            "createdAt": "2024-10-18T11:58:52.890Z",
+            "updatedAt": "2024-10-18T11:58:52.890Z",
+            "__v": 0,
+            "isYour": false
+        },
+        {
+            "_id": "6712addf748d0f8051db9ad5",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "https://memesoar.com",
+            "messageType": "link",
+            "mediaUrl": null,
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-18T18:50:07.043Z",
+            "createdAt": "2024-10-18T18:50:07.045Z",
+            "updatedAt": "2024-10-18T18:50:07.045Z",
+            "__v": 0,
+            "isYour": true
+        },
+        {
+            "_id": "671343e8213dd4c37c90fa74",
+            "sender": "6705161ed033b3bc03566aee",
+            "receiver": "670560d3e79e6b11ca0a221e",
+            "content": "File sent",
+            "messageType": "video",
+            "mediaUrl": "/uploads/534e4ec4-abe2-443f-80e4-73505184ac9d.mp4",
+            "status": "sent",
+            "deletedBy": [],
+            "isDeleted": false,
+            "isEncrypted": true,
+            "timestamp": "2024-10-19T05:30:16.177Z",
+            "createdAt": "2024-10-19T05:30:16.182Z",
+            "updatedAt": "2024-10-19T05:30:16.182Z",
+            "__v": 0,
+            "isYour": true
+        }
+    ],
+    "pagination": {
+        "currentPage": 1,
+        "totalPages": 5,
+        "hasNextPage": true,
+        "hasPreviousPage": false
+    }
+}
+
+// **********************   fetch metadata from url   *********************** //
+/api/v1/conversation/chat/message/fetchUrlMetadata?url=https://memesoar.com
+{
+    "title": "MemeSoar - Explore and Share Memes",
+    "image": "https://memesoar.com/icons/android-chrome-256x256.png"
+}
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+
+import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+
+export const getDataFromToken = (
+  request: NextRequest,
+  flag: boolean = true
+) => {
+  try {
+    const token =
+      request.cookies.get("accessToken")?.value ||
+      request.headers.get("accessToken")?.split(" ")[1];
+
+    if (!token) {
+      console.error("Token not present in cookies or headers");
+      return { userId: null, error: "Token not present", status: 401 };
+    }
+
+    const decodedToken: any = jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET!
+    );
+
+    const {userId}  = decodedToken?.id;
+
+    if (!userId || typeof userId !== "string") {
+      console.error("Invalid or missing user ID in token");
+      return { userId: null, error: "Invalid token user ID", status: 401 };
+    }
+
+    // Additional check to ensure userId is a valid MongoDB ObjectId
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(userId);
+    if (!isValidObjectId) {
+      console.error("Invalid user ID format");
+      return { userId: null, error: "Invalid user ID format", status: 401 };
+    }
+
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    const expSoon = decodedToken?.exp && decodedToken?.exp - now < 300;
+
+    if (decodedToken?.exp < now) {
+      console.log("Token has expired.");
+      return { userId: null, error: "Token expired", status: 401 };
+    }
+
+    return { userId, expSoon, status: 200 }; // Token is valid
+  } catch (error: any) {
+    if (error.name === "TokenExpiredError") {
+      console.error("Token has expired:", error.message);
+      return { userId: null, error: "Token expired", status: 401 };
+    }
+
+    console.error("Error decoding token:", error);
+    return { userId: null, error: "Token decode error", status: 500 };
+  }
+};

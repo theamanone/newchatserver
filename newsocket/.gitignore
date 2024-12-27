@@ -1,0 +1,14 @@
+node_modules
+.env
+.history
+.vscode
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+.idea/
+*.pem
+*.key
+config.json
+secrets.yml

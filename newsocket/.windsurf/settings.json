@@ -1,0 +1,50 @@
+{
+    "editor.fontSize": 14,
+    "editor.fontFamily": "Consolas, 'Courier New', monospace",
+    "workbench.colorTheme": "Default Dark+",
+    "editor.semanticHighlighting.enabled": true,
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": ["variable", "variable.other.readwrite"],
+                "settings": {
+                    "foreground": "#9CDCFE"
+                }
+            },
+            {
+                "scope": ["string", "string.quoted"],
+                "settings": {
+                    "foreground": "#CE9178"
+                }
+            },
+            {
+                "scope": ["keyword", "keyword.control"],
+                "settings": {
+                    "foreground": "#C586C0"
+                }
+            },
+            {
+                "scope": ["constant", "constant.numeric"],
+                "settings": {
+                    "foreground": "#B5CEA8"
+                }
+            },
+            {
+                "scope": ["function", "entity.name.function"],
+                "settings": {
+                    "foreground": "#DCDCAA"
+                }
+            },
+            {
+                "scope": ["comment"],
+                "settings": {
+                    "foreground": "#6A9955",
+                    "fontStyle": "italic"
+                }
+            }
+        ]
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "numso.prettier-standard-vscode"
+    }
+}

@@ -1,0 +1,865 @@
+/**
+ * NextChat WebSocket Server
+ * 
+ * A high-performance, cluster-based WebSocket server for real-time chat applications.
+ * This server utilizes Node.js clustering to distribute connections across CPU cores,
+ * providing optimal performance and scalability.
+ * 
+ * Features:
+ * - Multi-core processing using Node.js clusters
+ * - Connection limiting and monitoring
+ * - Memory-optimized data structures
+ * - Comprehensive message type handling
+ * - Group chat support
+ * - File and voice message handling
+ * 
+ * @version 2.0.0
+ * @license MIT
+ */
+
+const WebSocket = require("ws");
+const { createServer } = require("http");
+const { performance } = require('perf_hooks');
+const cluster = require('cluster');
+const os = require('os');
+
+// Global error handling
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Perform cleanup if necessary
+  process.exit(1); // Exit with error code
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Handle the error appropriately
+});
+
+// Server configuration with detailed explanations
+const SERVER_CONFIG = {
+  port: process.env.WS_PORT || 9000,
+  pingInterval: 30000,      // 30 seconds between ping messages
+  pongTimeout: 10000,       // 10 seconds to receive pong before considering connection dead
+  maxPayloadSize: 50 * 1024 * 1024, // 50MB max message size
+  backlog: 50000,           // Maximum length of the queue of pending connections
+  maxConnectionsPerWorker: 100000, // Maximum connections per worker process
+  maxConnectionsPerIP: 20,  // Rate limiting: max connections per IP
+  connectionTimeout: 600000, // 10 minutes connection timeout
+  workers: Math.min(os.cpus().length, 8), // Number of worker processes (max 8)
+  restartDelay: 5000,       // Delay before restarting a crashed worker
+  maxRestartAttempts: 3,    // Maximum number of restart attempts per worker
+  shutdownTimeout: 10000    // Time to wait for graceful shutdown
+};
+
+// Performance monitoring metrics
+const metrics = {
+  startTime: Date.now(),
+  totalConnections: 0,
+  activeConnections: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  errors: 0,
+  lastError: null
+};
+
+// Calculate total possible connections
+const TOTAL_MAX_CONNECTIONS = SERVER_CONFIG.maxConnectionsPerWorker * SERVER_CONFIG.workers;
+
+if (cluster.isPrimary) {
+  console.log('Master process starting. Launching ' + SERVER_CONFIG.workers + ' workers...');
+  console.log(`Server configured to handle up to ${SERVER_CONFIG.workers * SERVER_CONFIG.maxConnectionsPerWorker} concurrent connections`);
+
+  const workerRestarts = new Map();
+  
+  // Fork workers
+  for (let i = 0; i < SERVER_CONFIG.workers; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker, code, signal) => {
+    const workerId = worker.id;
+    const restarts = workerRestarts.get(workerId) || 0;
+    
+    if (restarts < SERVER_CONFIG.maxRestartAttempts) {
+      console.log(`Worker ${workerId} died (${code}). Attempting restart...`);
+      workerRestarts.set(workerId, restarts + 1);
+      setTimeout(() => {
+        cluster.fork();
+      }, SERVER_CONFIG.restartDelay);
+    } else {
+      console.log(`Worker ${workerId} has exceeded max restart attempts. Not restarting.`);
+      workerRestarts.delete(workerId);
+      
+      // Check if all workers have failed
+      if (Object.keys(cluster.workers).length === 0) {
+        console.log('All workers have failed. Shutting down master process.');
+        process.exit(1);
+      }
+    }
+  });
+
+  function handleWorkerMessage(message) {
+    if (message.type === 'connection_count') {
+      metrics.activeConnections = message.count;
+      metrics.totalConnections++;
+    } else if (message.type === 'error') {
+      metrics.errors++;
+      metrics.lastError = message.error;
+    }
+  }
+
+  // Handle worker messages
+  cluster.on('message', handleWorkerMessage);
+
+  // Graceful shutdown handler
+  process.on('SIGTERM', gracefulShutdown);
+  process.on('SIGINT', gracefulShutdown);
+
+  function gracefulShutdown() {
+    console.log('Initiating graceful shutdown...');
+    
+    // Stop accepting new connections
+    for (const id in cluster.workers) {
+      cluster.workers[id].send({ type: 'shutdown' });
+    }
+
+    // Wait for workers to finish
+    setTimeout(() => {
+      console.log('Forcing shutdown...');
+      process.exit(1);
+    }, SERVER_CONFIG.shutdownTimeout);
+  }
+
+} else {
+  // Worker process
+  const wss = new WebSocket.Server({ 
+    port: SERVER_CONFIG.port,
+    backlog: SERVER_CONFIG.backlog,
+    maxPayload: SERVER_CONFIG.maxPayloadSize,
+    perMessageDeflate: {
+      zlibDeflateOptions: {
+        chunkSize: 1024,
+        memLevel: 7,
+        level: 3
+      },
+      zlibInflateOptions: {
+        chunkSize: 10 * 1024
+      },
+      clientNoContextTakeover: true,
+      serverNoContextTakeover: true,
+      serverMaxWindowBits: 10,
+      concurrencyLimit: 10,
+      threshold: 1024
+    }
+  });
+
+  // Track connections per IP
+  const connectionsPerIP = new Map();
+  
+  wss.on('listening', () => {
+    console.log(`Worker ${cluster.worker.id} listening on port ${SERVER_CONFIG.port}`);
+  });
+
+  wss.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.log(`Worker ${cluster.worker.id}: Port ${SERVER_CONFIG.port} already in use, retrying...`);
+      setTimeout(() => {
+        wss.close();
+        wss.listen(SERVER_CONFIG.port);
+      }, 1000);
+    } else {
+      console.error(`Worker ${cluster.worker.id} error:`, error);
+    }
+  });
+
+  // Track connections and groups
+  const clients = new Map();
+  const groups = new Map();
+  let totalConnections = 0;
+
+  wss.on('connection', (ws, req) => {
+    const clientIP = req.socket.remoteAddress;
+    console.log(`New connection from ${clientIP}`);
+    
+    // Update connection counts
+    totalConnections++;
+    connectionsPerIP.set(clientIP, (connectionsPerIP.get(clientIP) || 0) + 1);
+    
+    // Initialize client info
+    const clientInfo = {
+      ws,
+      _id: null,
+      username: '',
+      avatar: '',
+      isOnline: true,
+      groups: [],
+      ip: clientIP,
+      connectionTime: new Date().toISOString()
+    };
+    
+    // Store client
+    clients.set(ws, clientInfo);
+    
+    // Notify master about connection count
+    process.send({ type: 'connection_count', count: totalConnections });
+
+    // Check connection limits
+    if (connectionsPerIP.get(clientIP) > SERVER_CONFIG.maxConnectionsPerIP) {
+      console.log(`Connection limit exceeded for IP ${clientIP}`);
+      ws.close(1008, 'Too many connections from this IP');
+      return;
+    }
+
+    // Set up ping interval
+    const pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.ping();
+      }
+    }, SERVER_CONFIG.pingInterval);
+
+    // Handle pong timeout
+    let pongReceived = true;
+    ws.on('pong', () => {
+      pongReceived = true;
+    });
+
+    // Check for pong responses
+    const pongCheck = setInterval(() => {
+      if (!pongReceived) {
+        console.log('Client not responding to ping, closing connection');
+        ws.terminate();
+        clearInterval(pongCheck);
+        return;
+      }
+      pongReceived = false;
+    }, SERVER_CONFIG.pongTimeout);
+
+    // Handle close
+    ws.on('close', () => {
+      clearInterval(pingInterval);
+      clearInterval(pongCheck);
+      
+      // Clean up client
+      const client = clients.get(ws);
+      if (client) {
+        // Remove from groups
+        client?.groups?.forEach(groupId => {
+          const group = groups.get(groupId);
+          if (group) {
+            groups.set(groupId, group.filter(member => member.ws !== ws));
+          }
+        });
+        
+        // Remove client
+        clients.delete(ws);
+      }
+      
+      // Update counts
+      totalConnections--;
+      connectionsPerIP.set(clientIP, connectionsPerIP.get(clientIP) - 1);
+      if (connectionsPerIP.get(clientIP) <= 0) {
+        connectionsPerIP.delete(clientIP);
+      }
+      
+      process.send({ type: 'connection_count', count: totalConnections });
+      broadcastOnlineStatus();
+    });
+
+    // Handle errors
+    ws.on('error', (error) => {
+      console.error(`WebSocket error: ${error.message}`);
+      process.send({ type: 'error', error });
+    });
+
+    // Handle incoming messages
+    ws.on('message', (message) => {
+      try {
+        const parsedMessage = JSON.parse(message);
+        console.log(`Worker ${cluster.worker.id} received message:`, parsedMessage);
+
+        switch (parsedMessage.type) {
+          case 'login':
+            handleLogin(ws, parsedMessage.data);
+            break;
+
+          case 'message':
+            handleMessage(ws, parsedMessage);
+            break;
+
+          case 'online_status':
+            handleVisibilityChange(ws, parsedMessage);
+            break;
+
+          case 'typing':
+            handleTyping(ws, parsedMessage);
+            break;
+
+          case 'messageSeen':
+            handleMessageSeen(ws, parsedMessage);
+            break;
+
+          case 'messageDelivered':
+            handleMessageDelivered(ws, parsedMessage);
+            break;
+
+          case 'presenceUpdate':
+            handlePresenceUpdate(ws, parsedMessage);
+            break;
+
+          case 'joinGroup':
+            handleJoinGroup(ws, parsedMessage);
+            break;
+
+          case 'reaction':
+            handleReaction(ws, parsedMessage);
+            break;
+
+          case 'file':
+            handleFileMessage(ws, parsedMessage);
+            break;
+
+          case 'voiceMessage':
+            handleVoiceMessage(ws, parsedMessage);
+            break;
+
+          case 'deleteMessage':
+            handleDeleteMessage(ws, parsedMessage);
+            break;
+
+          case 'editMessage':
+            handleEditMessage(ws, parsedMessage);
+            break;
+
+          default:
+            console.log(`Unknown message type: ${parsedMessage.type}`, parsedMessage);
+            ws.send(JSON.stringify({
+              type: 'error',
+              error: `Unsupported message type: ${parsedMessage.type}`,
+              originalMessage: parsedMessage
+            }));
+        }
+      } catch (error) {
+        console.error('Error processing message:', error);
+        ws.send(JSON.stringify({
+          type: 'error',
+          error: 'Invalid message format',
+          details: error.message
+        }));
+      }
+    });
+
+    // Initial broadcast of online status
+    broadcastOnlineStatus();
+  });
+
+  // Handle server errors
+  wss.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Port ${SERVER_CONFIG.port} is already in use`);
+    } else {
+      console.error('Server error:', error);
+      process.send({ type: 'error', error });
+    }
+  });
+
+  // Handle process errors
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.send({ type: 'error', error });
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.send({ type: 'error', error: reason });
+  });
+
+  // Message Handlers
+  function handleLogin(ws, userData) {
+    const userId = userData._id;
+    console.log("User logging in:", userId, userData);
+
+    // Store user info in the connection
+    ws.userId = userId;
+    clients.set(ws, {
+      _id: userId,
+      ws: ws,
+      username: userData.username,
+      avatar: userData.avatar,
+      isOnline: true
+    });
+
+    // Send online status to all connected clients
+    broadcastOnlineStatus();
+    
+    // Send confirmation to the logged-in user
+    ws.send(JSON.stringify({
+      type: "loginSuccess",
+      userId: userId,
+      timestamp: new Date().toISOString()
+    }));
+  }
+
+  function handleVisibilityChange(ws, data) {
+    const { isOnline } = data;
+    const clientInfo = clients.get(ws);
+    clientInfo.isOnline = isOnline;
+    broadcastOnlineStatus();
+  }
+
+  function handleAdminMessage(ws, data) {
+    const { repliedTo_id, messageContent, messageType, filePath } = data;
+    const adminId = 'admin';
+
+    for (const [recipientWs, recipientInfo] of clients.entries()) {
+      if (recipientInfo._id === repliedTo_id) {
+        recipientWs.send(JSON.stringify({
+          type: 'adminMessage',
+          data: {
+            messageContent,
+            messageType,
+            filePath,
+            data,
+            senderId: adminId,
+            senderusername: 'Admin',
+            senderAvatar: clients.get(ws).avatar,
+            timestamp: new Date().toISOString()
+          }
+        }));
+        break;
+      }
+    }
+  }
+
+  function handleUserMessage(ws, data) {
+    const { messageContent, messageType, filePath } = data;
+    const clientInfo = clients.get(ws);
+    const adminId = 'admin';
+
+    for (const [recipientWs, recipientInfo] of clients.entries()) {
+      if (recipientInfo._id === adminId) {
+        recipientWs.send(JSON.stringify({
+          type: 'userMessage',
+          data: {
+            messageContent,
+            messageType,
+            filePath,
+            data,
+            senderId: clientInfo._id,
+            senderusername: clientInfo.username,
+            senderAvatar: clientInfo.avatar,
+            timestamp: new Date().toISOString()
+          }
+        }));
+        break;
+      }
+    }
+  }
+
+  function handleMessageSeen(ws, data) {
+    const { messageId, sender } = data;
+    const senderConnection = Array.from(clients.values())
+      .find(conn => conn._id === sender);
+
+    if (senderConnection) {
+      senderConnection.ws.send(JSON.stringify({
+        type: 'messageSeen',
+        messageId,
+        seenBy: ws.userId,
+        timestamp: new Date().toISOString()
+      }));
+    }
+  }
+
+  function handleMessageDelivered(ws, data) {
+    const { messageId, sender } = data;
+    const senderConnection = Array.from(clients.values())
+      .find(conn => conn._id === sender);
+
+    if (senderConnection) {
+      senderConnection.ws.send(JSON.stringify({
+        type: 'messageDelivered',
+        messageId,
+        deliveredTo: ws.userId,
+        timestamp: new Date().toISOString()
+      }));
+    }
+  }
+
+  function handleMessage(ws, message) {
+    console.log("Handling message:", message);
+    
+    // Handle both direct message format and wrapped message format
+    const messageData = message.data || message;
+    // const messageType = message?.type || "message";
+    const messageType = "message";
+    
+    const receiverId = messageData.receiver;
+    const senderId = messageData.sender?._id || ws.userId;
+    const isGroup = messageData.isGroup === "true" || messageData.isGroup === true;
+
+    console.log("Message routing info:", {
+      receiverId,
+      senderId,
+      isGroup,
+      messageType: messageData.messageType,
+      type: messageType,
+      timestamp: messageData.timestamp
+    });
+
+    if (isGroup) {
+      handleGroupMessage(ws, messageData);
+    } else {
+      // Find the receiver's connection
+      const receiverConnection = Array.from(clients.values())
+        .find(conn => conn._id === receiverId);
+
+      console.log("Receiver connection found:", !!receiverConnection, "Receiver ID:", receiverId);
+
+      if (receiverConnection) {
+        try {
+          // Format message for receiver with type in data
+          const formattedMessage = {
+            type: messageType,
+            data: {
+              ...messageData,
+              type: messageType,
+              status: [
+                {
+                  userId: receiverId,
+                  status: "delivered",
+                  timestamp: Date.now()
+                }
+              ]
+            }
+          };
+
+          console.log("Sending formatted message:", formattedMessage);
+          receiverConnection.ws.send(JSON.stringify(formattedMessage));
+
+          // Update sender's message status
+          ws.send(JSON.stringify({
+            type: "messageStatus",
+            data: {
+              messageId: messageData._id,
+              type: "messageStatus",
+              status: {
+                userId: receiverId,
+                status: "delivered",
+                timestamp: Date.now()
+              }
+            }
+          }));
+        } catch (error) {
+          console.error("Error sending message:", error);
+          ws.send(JSON.stringify({
+            type: "error",
+            data: {
+              type: "error",
+              messageId: messageData._id,
+              error: "Failed to send message",
+              details: error.message
+            }
+          }));
+        }
+      } else {
+        console.log("Receiver offline or not found:", receiverId);
+        // Update message status as pending
+        ws.send(JSON.stringify({
+          type: "messageStatus",
+          data: {
+            type: "messageStatus",
+            messageId: messageData._id,
+            status: {
+              userId: receiverId,
+              status: "pending",
+              timestamp: Date.now()
+            }
+          }
+        }));
+      }
+    }
+  }
+
+  function handleGroupMessage(ws, data) {
+    const { groupId } = data;
+    const group = groups.get(groupId);
+    
+    if (group) {
+      group?.forEach(member => {
+        if (member.ws !== ws && member.ws.readyState === WebSocket.OPEN) {
+          member.ws.send(JSON.stringify({ type: 'message', data }));
+        }
+      });
+    }
+  }
+
+  function handlePersonalMessage(ws, data) {
+    const { receiver } = data;
+    const sender = clients.get(ws);
+    
+    // Find recipient
+    for (const [recipientWs, recipientInfo] of clients.entries()) {
+      if (recipientInfo._id === receiver && recipientWs.readyState === WebSocket.OPEN) {
+        recipientWs.send(JSON.stringify({ 
+          type: 'message', 
+          data: {
+            ...data,
+            sender: sender._id,
+            senderUsername: sender.username,
+            senderAvatar: sender.avatar
+          }
+        }));
+        break;
+      }
+    }
+  }
+
+  function handleJoinGroup(ws, data) {
+    const { groupId } = data;
+    const clientInfo = clients.get(ws);
+    if (!clientInfo) return;
+
+    if (!groups.has(groupId)) {
+      groups.set(groupId, []);
+    }
+
+    const group = groups.get(groupId);
+    if (!group.some(member => member.ws === ws)) {
+      group.push(clientInfo);
+      clientInfo.groups.push(groupId);
+      
+      // Notify group members
+      broadcastToGroup(groupId, {
+        type: 'userJoin',
+        data: {
+          groupId,
+          user: {
+            _id: clientInfo._id,
+            username: clientInfo.username,
+            avatar: clientInfo.avatar
+          }
+        }
+      });
+    }
+  }
+
+  function broadcastToGroup(groupId, message) {
+    const group = groups.get(groupId);
+    if (group) {
+      group?.forEach(member => {
+        if (member.ws?.readyState === WebSocket.OPEN) {
+          member.ws.send(JSON.stringify(message));
+        }
+      });
+    }
+  }
+
+  function broadcastOnlineStatus() {
+    const onlineUsers = Array.from(clients.values())
+      .filter(client => client._id)
+      .map(client => ({
+        _id: client._id,
+        username: client.username,
+        avatar: client.avatar,
+        isOnline: true
+      }));
+
+    for (const [ws, client] of clients.entries()) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'onlineStatus',
+          data: onlineUsers
+        }));
+      }
+    }
+  }
+
+  function handleGetGroupOnlineUsers(ws, data) {
+    const { groupId } = data;
+    const group = groups.get(groupId);
+    
+    if (group) {
+      const onlineUsers = group
+        .filter(member => member.ws.readyState === WebSocket.OPEN)
+        .map(member => ({
+          _id: member._id,
+          username: member.username,
+          avatar: member.avatar,
+          isOnline: true
+        }));
+
+      ws.send(JSON.stringify({
+        type: 'groupOnlineUsers',
+        data: { groupId, onlineUsers }
+      }));
+    }
+  }
+
+  function handlePresenceUpdate(ws, data) {
+    const { isOnline } = data;
+    const clientInfo = clients.get(ws);
+    clientInfo.isOnline = isOnline;
+    broadcastOnlineStatus();
+  }
+
+  function handleReaction(ws, data) {
+    const { messageId, reaction, groupId } = data;
+    const clientInfo = clients.get(ws);
+
+    const message = {
+      type: 'reaction',
+      data: {
+        messageId,
+        reaction,
+        userId: clientInfo._id,
+        username: clientInfo.username
+      }
+    };
+
+    if (groupId) {
+      broadcastToGroup(groupId, message);
+    } else {
+      broadcastToAllClients(message);
+    }
+  }
+
+  function handleFileMessage(ws, data) {
+    const clientInfo = clients.get(ws);
+    const message = {
+      type: 'file',
+      data: {
+        ...data,
+        senderId: clientInfo._id,
+        senderUsername: clientInfo.username,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    if (data.groupId) {
+      broadcastToGroup(data.groupId, message);
+    } else if (data.receiverId) {
+      for (const [recipientWs, recipientInfo] of clients.entries()) {
+        if (recipientInfo._id === data.receiverId) {
+          recipientWs.send(JSON.stringify(message));
+          break;
+        }
+      }
+    }
+  }
+
+  function handleVoiceMessage(ws, data) {
+    const clientInfo = clients.get(ws);
+    const message = {
+      type: 'voiceMessage',
+      data: {
+        ...data,
+        senderId: clientInfo._id,
+        senderUsername: clientInfo.username,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    if (data.groupId) {
+      broadcastToGroup(data.groupId, message);
+    } else if (data.receiverId) {
+      for (const [recipientWs, recipientInfo] of clients.entries()) {
+        if (recipientInfo._id === data.receiverId) {
+          recipientWs.send(JSON.stringify(message));
+          break;
+        }
+      }
+    }
+  }
+
+  function handleDeleteMessage(ws, data) {
+    const { messageId, groupId } = data;
+    const message = {
+      type: 'deleteMessage',
+      data: { messageId }
+    };
+
+    if (groupId) {
+      broadcastToGroup(groupId, message);
+    } else {
+      broadcastToAllClients(message);
+    }
+  }
+
+  function handleEditMessage(ws, data) {
+    const { messageId, newContent, groupId } = data;
+    const message = {
+      type: 'editMessage',
+      data: { messageId, newContent }
+    };
+
+    if (groupId) {
+      broadcastToGroup(groupId, message);
+    } else {
+      broadcastToAllClients(message);
+    }
+  }
+
+  function handleNewChat(ws, data) {
+    const { receiverId } = data;
+    for (const [recipientWs, recipientInfo] of clients.entries()) {
+      if (recipientInfo._id === receiverId) {
+        recipientWs.send(JSON.stringify({ type: 'newChat', data }));
+        break;
+      }
+    }
+  }
+
+  // Helper function to broadcast to all clients
+  function broadcastToAllClients(message) {
+    for (const [ws, _] of clients.entries()) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(message));
+      }
+    }
+  }
+
+  // Helper function to broadcast to a specific group
+  function broadcastToGroup(groupId, message) {
+    const groupMembers = groups.get(groupId) || [];
+    groupMembers?.forEach(memberWs => {
+      if (memberWs?.readyState === WebSocket.OPEN) {
+        memberWs.send(JSON.stringify(message));
+      }
+    });
+  }
+
+  function handleTyping(ws, data) {
+    const { receiver, groupId, isTyping } = data;
+    
+    if (groupId) {
+      // Handle group typing status
+      const group = groups.get(groupId);
+      if (group) {
+        group?.forEach(memberId => {
+          const memberConnection = Array.from(clients.values())
+            .find(conn => conn._id === memberId);
+          if (memberConnection && memberId !== ws.userId) {
+            memberConnection.ws.send(JSON.stringify({
+              type: 'typing',
+              groupId,
+              userId: ws.userId,
+              isTyping
+            }));
+          }
+        });
+      }
+    } else if (receiver) {
+      // Handle personal typing status
+      const receiverConnection = Array.from(clients.values())
+        .find(conn => conn._id === receiver);
+      
+      if (receiverConnection) {
+        receiverConnection.ws.send(JSON.stringify({
+          type: 'typing',
+          userId: ws.userId,
+          isTyping
+        }));
+      }
+    }
+  }
+}

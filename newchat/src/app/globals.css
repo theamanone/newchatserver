@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+
+@media print {
+    html, body {
+       display: none;  /* hide whole page */
+    }
+}
+
+
+html {
+  /* user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none; */
+}
+
+.dynamic-height {
+  height: calc(
+    var(--viewport-height, 100vh) 
+  ); /* Adjust 10px if needed */
+  max-height: 100vh;
+}
+
+body {
+  -webkit-touch-callout: none; /* Disable iOS callout menu */
+}
+
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrollbar-hide {
+    scrollbar-width: none; /* For Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* For Chrome, Safari, and Opera */
+  }
+
+  .scrollbar-thumb {
+    @apply bg-gray-600 rounded-md; /* Custom thumb color and rounded edges */
+  }
+
+  .scrollbar-thumb:hover {
+    @apply bg-gray-500; /* Thumb color on hover */
+  }
+
+  .scrollbar {
+    @apply overflow-y-scroll; /* Enable vertical scrolling */
+  }
+
+  .scrollbar::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+  }
+
+  .scrollbar::-webkit-scrollbar-track {
+    background: transparent; /* Background of the scrollbar track */
+  }
+
+  .scrollbar::-webkit-scrollbar-thumb {
+    @apply scrollbar-thumb; /* Apply custom styles to the scrollbar thumb */
+  }
+
+  /* Light mode scrollbar */
+  .scrollbar-light {
+    scrollbar-width: thin;
+    scrollbar-color: #E5E7EB transparent;
+  }
+
+  .scrollbar-light::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-light::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-light::-webkit-scrollbar-thumb {
+    background-color: #E5E7EB;
+    border-radius: 20px;
+  }
+
+  /* Dark mode scrollbar */
+  .scrollbar-dark {
+    scrollbar-width: thin;
+    scrollbar-color: #4B5563 transparent;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb {
+    background-color: #4B5563;
+    border-radius: 20px;
+  }
+
+  /* Hover effects */
+  .scrollbar-light::-webkit-scrollbar-thumb:hover {
+    background-color: #D1D5DB;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background-color: #6B7280;
+  }
+}
+
+
+
+/* Custom Scrollbar Styles */
+.membersList::-webkit-scrollbar {
+  width: 6px; /* Width of the scrollbar */
+}
+
+.membersList::-webkit-scrollbar-thumb {
+  background-color: #888; /* Color of the scrollbar thumb */
+  border-radius: 10px;
+}
+
+.membersList::-webkit-scrollbar-thumb:hover {
+  background-color: #555; /* Color on hover */
+}
+
+.membersList::-webkit-scrollbar-track {
+  background: #f0f0f0; /* Track background color */
+  border-radius: 10px;
+}
+/* Custom Scrollbar Styles */
+.customScrollBar::-webkit-scrollbar {
+  width: 6px; /* Width of the scrollbar */
+}
+
+.customScrollBar::-webkit-scrollbar-thumb {
+  background-color: #888; /* Color of the scrollbar thumb */
+  border-radius: 10px;
+}
+
+.customScrollBar::-webkit-scrollbar-thumb:hover {
+  background-color: #555; /* Color on hover */
+}
+
+.customScrollBar::-webkit-scrollbar-track {
+  background: #f0f0f0; /* Track background color */
+  border-radius: 10px;
+}

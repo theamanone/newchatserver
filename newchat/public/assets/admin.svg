@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <!-- Background Circle -->
+    <circle cx="100" cy="100" r="98" fill="#2563eb"/>
+    
+    <!-- Head -->
+    <circle cx="100" cy="85" r="35" fill="#ffffff"/>
+    
+    <!-- Body -->
+    <path d="M100 130 C40 130 30 180 30 200 L170 200 C170 180 160 130 100 130" fill="#ffffff"/>
+    
+    <!-- Headset -->
+    <path d="M65 85 C65 85 60 85 60 90 L60 110 C60 115 65 115 65 115" 
+          fill="none" stroke="#2563eb" stroke-width="8"/>
+    <path d="M135 85 C135 85 140 85 140 90 L140 110 C140 115 135 115 135 115" 
+          fill="none" stroke="#2563eb" stroke-width="8"/>
+    <path d="M60 90 C60 60 80 50 100 50 C120 50 140 60 140 90" 
+          fill="none" stroke="#2563eb" stroke-width="8"/>
+</svg>

@@ -1,0 +1,39 @@
+# API Endpoints Documentation
+
+## Chat Messages
+
+### Get Messages
+**Endpoint:** `GET /api/v1/chat/messages/[userId]`
+
+**Description:** Retrieve messages between the current user and a specified receiver with pagination.
+
+**Query Parameters:**
+- `page` (optional): The page number to retrieve (default: 1).
+- `limit` (optional): The number of messages to return per page (default: 10).
+
+**Headers:**
+- `receiver_id`: The ID of the user to whom the messages were sent or received.
+
+**Response:**
+- `200 OK`: Returns the messages and pagination info.
+- `500 Internal Server Error`: Returns an error message if unable to retrieve messages.
+
+**Response Example:**
+```json
+{
+  "messages": [
+    {
+      "sender": "senderId",
+      "receiver": "receiverId",
+      "content": "Hello!",
+      "messageType": "text",
+      "timestamp": "2024-10-08T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 3,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  }
+}
