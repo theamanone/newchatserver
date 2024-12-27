@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 */node_modules/
+/newchat/node_modules/
+/newsocket/node_modules/
 
 # Build outputs
 dist/
