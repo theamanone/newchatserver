@@ -71,7 +71,8 @@ export const config = {
   matcher: [
     '/',                // Match all routes
     '/api/v1/:path*',    // Match all API routes
-    // '/admin/:path*',     // Match all admin routes
+    '/admin/:path*',     // Match all admin routes
+    '/',
     '/auth/:path*',      // Match all auth routes
     '/api/v1/admin/:path*', // Match all admin API routes
     '/superadmin/:path*', // Match all superadmin routes
